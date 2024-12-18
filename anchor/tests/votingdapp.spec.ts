@@ -6,6 +6,7 @@ import { Program } from "@coral-xyz/anchor";
 
 const IDL = require("../target/idl/votingdapp.json");
 import { Votingdapp } from "@project/anchor";
+import { log } from "console";
 
 const PUPPET_PROGRAM_ID = new PublicKey("coUnmi3oBUtwtd9fjeAvSsJssXh5A5xyPbhpewyzRVF");
 
@@ -37,7 +38,7 @@ describe('Create a system account', () => {
       new anchor.BN(1).toArrayLike(Buffer, 'le', 8),
     ], PUPPET_PROGRAM_ID)
 
-    const poll = await puppetProgram.account.poll.fetch(pollAddress)
+    const poll = await puppetProgram.account.pollAccount.fetch(pollAddress)
 
     expect(poll.pollId.toNumber()).toEqual(1)
     expect(poll.description).toEqual("What type of destination you like for your trip?")
@@ -47,13 +48,13 @@ describe('Create a system account', () => {
 
   test("Initilize Candidate", async () => {
     await puppetProgram.methods.initializeCandidate(
-      "Mountains",
       new anchor.BN(1),
+      "Mountains",
     ).rpc()
 
     await puppetProgram.methods.initializeCandidate(
-      "Beach",
       new anchor.BN(1),
+      "Beach",
     ).rpc()
 
     const [mountainAddress] = PublicKey.findProgramAddressSync([
@@ -66,16 +67,54 @@ describe('Create a system account', () => {
       Buffer.from("Beach"),
     ], PUPPET_PROGRAM_ID);
 
-    const mountainCandidate = await puppetProgram.account.candidate.fetch(mountainAddress);
+    const mountainCandidate = await puppetProgram.account.candidateAccount.fetch(mountainAddress);
     expect(mountainCandidate.candidateName).toEqual("Mountains")
     expect(mountainCandidate.candidateVotes.toNumber()).toEqual(0)
 
-    const beachCandidate = await puppetProgram.account.candidate.fetch(beachAddress);
+    const beachCandidate = await puppetProgram.account.candidateAccount.fetch(beachAddress);
     expect(beachCandidate.candidateName).toEqual("Beach")
     expect(beachCandidate.candidateVotes.toNumber()).toEqual(0)
+
+    const [pollAddress] = PublicKey.findProgramAddressSync([
+      new anchor.BN(1).toArrayLike(Buffer, 'le', 8),
+    ], PUPPET_PROGRAM_ID)
+
+    const poll = await puppetProgram.account.pollAccount.fetch(pollAddress)
+    expect(poll.candidateAmount.toNumber()).toEqual(2);
+
   })
 
   test("Initilize Voting", async () => {
+    await puppetProgram.methods.vote(
+      new anchor.BN(1),
+      "Mountains",
+    ).rpc()
+
+    await puppetProgram.methods.vote(
+      new anchor.BN(1),
+      "Mountains",
+    ).rpc()
+
+    await puppetProgram.methods.vote(
+      new anchor.BN(1),
+      "Beach",
+    ).rpc()
+
+    const [mountainAddress] = PublicKey.findProgramAddressSync([
+      new anchor.BN(1).toArrayLike(Buffer, 'le', 8),
+      Buffer.from("Mountains"),
+    ], PUPPET_PROGRAM_ID);
+
+    const [beachAddress] = PublicKey.findProgramAddressSync([
+      new anchor.BN(1).toArrayLike(Buffer, 'le', 8),
+      Buffer.from("Beach"),
+    ], PUPPET_PROGRAM_ID);
+
+    const mountainCandidate = await puppetProgram.account.candidateAccount.fetch(mountainAddress);
+    expect(mountainCandidate.candidateVotes.toNumber()).toEqual(2)
+
+    const beachCandidate = await puppetProgram.account.candidateAccount.fetch(beachAddress);
+    expect(beachCandidate.candidateVotes.toNumber()).toEqual(1)
 
   })
 });
