@@ -118,3 +118,7 @@ describe('Create a system account', () => {
 
   })
 });
+
+// To test it without having to deploy 
+// ❯ anchor test --skip-local-validator --skip-deploy
+
