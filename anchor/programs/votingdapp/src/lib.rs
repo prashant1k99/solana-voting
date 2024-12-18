@@ -129,6 +129,27 @@ pub struct CandidateAccount {
     pub candidate_votes: u64,
 }
 
+// For a non-PDA transaction for vote:
+//
+///#[derive(Accounts)]
+///#[instruction(poll_id: u64, candidate_name: String)]
+///pub struct Vote<'info> {
+//    pub signer: Signer<'info>,
+//
+//    #[account(
+//        seeds = [poll_id.to_le_bytes().as_ref()],
+//        bump
+//    )]
+//    pub poll_account: Account<'info, PollAccount>,
+//
+//    #[account(
+//        mut,
+//        seeds = [poll_id.to_le_bytes().as_ref(), candidate_name.as_bytes()],
+//        bump
+//    )]
+//    pub candidate_account: Account<'info, CandidateAccount>,
+///}
+
 #[derive(Accounts)]
 #[instruction(poll_id: u64, candidate_name: String)]
 pub struct Vote<'info> {
