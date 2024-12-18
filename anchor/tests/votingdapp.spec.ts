@@ -90,15 +90,15 @@ describe('Create a system account', () => {
       "Mountains",
     ).rpc()
 
-    await puppetProgram.methods.vote(
-      new anchor.BN(1),
-      "Mountains",
-    ).rpc()
-
-    await puppetProgram.methods.vote(
-      new anchor.BN(1),
-      "Beach",
-    ).rpc()
+    try {
+      await puppetProgram.methods.vote(
+        new anchor.BN(1),
+        "Mountains",
+      ).rpc()
+      fail("Expected the second vote to fail")
+    } catch (e: any) {
+      console.log(e)
+    }
 
     const [mountainAddress] = PublicKey.findProgramAddressSync([
       new anchor.BN(1).toArrayLike(Buffer, 'le', 8),
@@ -111,10 +111,10 @@ describe('Create a system account', () => {
     ], PUPPET_PROGRAM_ID);
 
     const mountainCandidate = await puppetProgram.account.candidateAccount.fetch(mountainAddress);
-    expect(mountainCandidate.candidateVotes.toNumber()).toEqual(2)
+    expect(mountainCandidate.candidateVotes.toNumber()).toEqual(1)
 
     const beachCandidate = await puppetProgram.account.candidateAccount.fetch(beachAddress);
-    expect(beachCandidate.candidateVotes.toNumber()).toEqual(1)
+    expect(beachCandidate.candidateVotes.toNumber()).toEqual(0)
 
   })
 });

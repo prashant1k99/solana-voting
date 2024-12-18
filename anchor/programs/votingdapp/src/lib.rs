@@ -35,17 +35,18 @@ pub mod votingdapp {
         _poll_id: u64,
         candidate_name: String,
     ) -> Result<()> {
-        let candidate = &mut ctx.accounts.candidate_account;
-        candidate.candidate_name = candidate_name;
-        candidate.candidate_votes = 0;
+        ctx.accounts.candidate_account.candidate_name = candidate_name;
 
-        let poll = &mut ctx.accounts.poll_account;
-        poll.candidate_amount += 1;
+        ctx.accounts.poll_account.candidate_amount += 1;
 
         Ok(())
     }
 
     pub fn vote(ctx: Context<Vote>, _poll_id: u64, _candidate_name: String) -> Result<()> {
+        if ctx.accounts.vote_account.has_voted {
+            return Err(ErrorCode::AlreadyVoted.into());
+        }
+
         // Check for the current time and verify it falls in voting time
         let current_time = Clock::get()?.unix_timestamp;
 
@@ -57,8 +58,9 @@ pub mod votingdapp {
             return Err(ErrorCode::VotingNotStarted.into());
         }
 
-        let candidate_account = &mut ctx.accounts.candidate_account;
-        candidate_account.candidate_votes += 1;
+        ctx.accounts.candidate_account.candidate_votes += 1;
+
+        ctx.accounts.vote_account.has_voted = true;
 
         Ok(())
     }
@@ -146,7 +148,22 @@ pub struct Vote<'info> {
     )]
     pub candidate_account: Account<'info, CandidateAccount>,
 
+    #[account(
+        init,
+        payer = signer,
+        space = ANCHOR_DISCRIMINATOR_SIZE + VoteAccount::INIT_SPACE,
+        seeds = [poll_id.to_le_bytes().as_ref(), signer.key().as_ref()],
+        bump
+    )]
+    pub vote_account: Account<'info, VoteAccount>,
+
     pub system_program: Program<'info, System>,
+}
+
+#[account]
+#[derive(InitSpace)]
+pub struct VoteAccount {
+    pub has_voted: bool,
 }
 
 #[error_code]
@@ -155,4 +172,6 @@ pub enum ErrorCode {
     VotingNotStarted,
     #[msg("Voting has ended")]
     VotingEnded,
+    #[msg("User has already voted")]
+    AlreadyVoted,
 }
