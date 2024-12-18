@@ -37,6 +37,12 @@ pub mod votingdapp {
     ) -> Result<()> {
         ctx.accounts.candidate_account.candidate_name = candidate_name;
 
+        // You can also add the comments to log things
+        //msg!(
+        //    "Candidate Count: {}",
+        //    ctx.accounts.poll_account.candidate_amount
+        //);
+
         ctx.accounts.poll_account.candidate_amount += 1;
 
         Ok(())
